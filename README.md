@@ -15,12 +15,15 @@
 ## 启动
 
 ```bash
-cd Claude_DesktopPet
 pip install PyQt5
 pythonw main.py
 ```
 
-或者双击 `start_pet.bat`。
+如果下载慢（国内）：
+```bash
+pip install PyQt5 -i https://pypi.tuna.tsinghua.edu.cn/simple
+pythonw main.py
+```
 
 ## 操作
 
