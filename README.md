@@ -14,16 +14,30 @@
 
 ## 启动
 
+**第一步：安装 Python**
+
+打开 [python.org](https://www.python.org/downloads/)，点击黄色的 **Download Python**，下载后运行安装程序。
+
+**安装时最关键的一步：** 在安装界面 **底部勾上 "Add Python to PATH"**（一定要勾，否则后面会报错），然后点 Install Now。
+
+**第二步：安装 PyQt5 并启动桌宠**
+
+打开命令行（cmd），依次执行：
+
 ```bash
 pip install PyQt5
+cd 你解压桌宠的文件夹路径
 pythonw main.py
 ```
 
-如果下载慢（国内）：
+如果下载慢（国内），用清华镜像：
 ```bash
 pip install PyQt5 -i https://pypi.tuna.tsinghua.edu.cn/simple
+cd 你解压桌宠的文件夹路径
 pythonw main.py
 ```
+
+以后直接双击 `start_pet.bat` 就能启动。
 
 ## 操作
 
