@@ -123,6 +123,7 @@ class PetWindow(QWidget):
         self._forced_sleep  = False     # manual sleep lock
         self._feed_particles = []        # (x, y, life, max_life) for heart particles
         self._bubble = None              # (text, age, duration) for idle bubble
+        self._locked = False
 
         # ── interaction ─────────────────────────────────────────────
         self.dragging   = False
@@ -331,7 +332,7 @@ class PetWindow(QWidget):
 
     # ── shadow ─────────────────────────────────────────────────────────
     def _draw_shadow(self, p, cx, cy):
-        ground_y = cy + 55
+        ground_y = cy + 70
         shade = QRadialGradient(cx, ground_y, 35)
         shade.setColorAt(0.0, QColor(0, 0, 0, 50))
         shade.setColorAt(1.0, QColor(0, 0, 0, 0))
@@ -387,7 +388,7 @@ class PetWindow(QWidget):
     # ── hunger bar ─────────────────────────────────────────────────────
     def _draw_hunger_bar(self, p, cx, cy):
         bar_w, bar_h = 50, 4
-        bx, by = cx - bar_w//2, cy + 52
+        bx, by = cx - bar_w//2, cy + 68
         p.setPen(Qt.NoPen)
         p.setBrush(QColor(0, 0, 0, 40))
         p.drawRoundedRect(bx, by, bar_w, bar_h, 2, 2)
@@ -564,7 +565,7 @@ class PetWindow(QWidget):
         # random state transitions
         r = random.random()
         if self.state == State.IDLE:
-            if r < 0.35:
+            if r < 0.35 and not self._locked:
                 self._enter_state(State.WALK)
             elif r < 0.4:
                 self._enter_state(State.HAPPY)
@@ -604,7 +605,7 @@ class PetWindow(QWidget):
 
     # ───────────────────────── mouse events ────────────────────────────
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton and not self._locked:
             self.dragging = True
             self.drag_offset = event.pos()
             self.mouse_in = True
@@ -644,8 +645,10 @@ class PetWindow(QWidget):
             QMenu::separator { height: 1px; background: #E8E8E8; margin: 3px 8px; }
         """)
 
+        icon = '🔓' if self._locked else '🔒'
+        txt = f'{icon}  解锁' if self._locked else f'{icon}  锁定'
+        menu.addAction(txt).triggered.connect(lambda: self._toggle_lock())
         menu.addAction('🍖  投喂').triggered.connect(lambda: self._feed())
-        menu.addSeparator()
         if self._forced_sleep or self.state == State.SLEEP:
             menu.addAction('☀️  唤醒').triggered.connect(lambda: self._wake())
         else:
@@ -675,6 +678,12 @@ class PetWindow(QWidget):
 
     def _toggle_icon(self):
         self._icon_id = 1 - self._icon_id
+        self.update()
+
+    def _toggle_lock(self):
+        self._locked = not self._locked
+        if self._locked and self.state == State.WALK:
+            self._enter_state(State.IDLE)
         self.update()
 
     def _restart(self):
