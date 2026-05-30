@@ -719,7 +719,7 @@ class PetWindow(QWidget):
         """Launch Codex (embedded script, no external dependency)."""
         try:
             codex_script = r'''@echo off
-set DEEPSEEK_API_KEY=sk-286f96b2b8da49d3a27f94ac97fad574
+set DEEPSEEK_API_KEY=YOUR_API_KEY_HERE
 
 echo [1/3] Killing old proxy...
 powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
