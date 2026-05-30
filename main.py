@@ -182,6 +182,9 @@ class PetWindow(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
 
+        # near-transparent fill so layered window catches mouse everywhere
+        p.fillRect(self.rect(), QColor(255, 255, 255, 1))
+
         cw, ch = self.width(), self.height()
         cx, cy = cw // 2, ch // 2 - 10      # body center
 
@@ -656,6 +659,7 @@ class PetWindow(QWidget):
         menu.addSeparator()
         menu.addAction('🔄  切换图标').triggered.connect(lambda: self._toggle_icon())
         menu.addAction('>_  Claude Code').triggered.connect(self._launch_claude_code)
+        menu.addAction('>_  Codex').triggered.connect(self._launch_codex)
         menu.addSeparator()
         menu.addAction('🔄  重启').triggered.connect(self._restart)
         menu.addAction('❌  退出').triggered.connect(QApplication.quit)
@@ -705,6 +709,48 @@ class PetWindow(QWidget):
             )
             subprocess.Popen(
                 [exe],
+                cwd='D:\\',
+                creationflags=subprocess.CREATE_NEW_CONSOLE
+            )
+        except Exception as e:
+            print(f'[pet] launch error: {e}')
+
+    def _launch_codex(self):
+        """Launch Codex (embedded script, no external dependency)."""
+        try:
+            codex_script = r'''@echo off
+set DEEPSEEK_API_KEY=sk-286f96b2b8da49d3a27f94ac97fad574
+
+echo [1/3] Killing old proxy...
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
+timeout /t 1 /nobreak >nul
+
+echo [2/3] Starting DeepSeek proxy...
+start /min node D:\codex-deepseek-proxy\proxy.mjs
+
+set retries=0
+:wait
+set /a retries+=1
+if %retries% gtr 10 (
+  echo Proxy failed to start. Port 4000 may be in use.
+  pause
+  exit /b
+)
+timeout /t 1 /nobreak >nul
+curl -s http://localhost:4000/health >nul 2>&1
+if errorlevel 1 goto wait
+
+echo [3/3] Starting Codex...
+codex -C D:\
+
+echo Cleaning up proxy...
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
+'''
+            tmp = os.path.join(os.environ['TEMP'], 'codex-launcher.bat')
+            with open(tmp, 'w', encoding='utf-8') as f:
+                f.write(codex_script)
+            subprocess.Popen(
+                [tmp],
                 cwd='D:\\',
                 creationflags=subprocess.CREATE_NEW_CONSOLE
             )
