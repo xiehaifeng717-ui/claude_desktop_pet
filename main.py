@@ -718,15 +718,23 @@ class PetWindow(QWidget):
     def _launch_codex(self):
         """Launch Codex (embedded script, no external dependency)."""
         try:
-            codex_script = r'''@echo off
-set DEEPSEEK_API_KEY=sk-4307fc5348fc406ca10ad0cf139fc4ea
+            # read API key from local config (gitignored)
+            api_key = 'YOUR_API_KEY_HERE'
+            cfg = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.json')
+            if os.path.exists(cfg):
+                import json as _json
+                with open(cfg) as _f:
+                    api_key = _json.load(_f).get('deepseek_api_key', api_key)
+
+            codex_script = f'''@echo off
+set DEEPSEEK_API_KEY={api_key}
 
 echo [1/3] Killing old proxy...
-powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}"
 timeout /t 1 /nobreak >nul
 
 echo [2/3] Starting DeepSeek proxy...
-start /min node D:\codex-deepseek-proxy\proxy.mjs
+start /min node D:\\codex-deepseek-proxy\\proxy.mjs
 
 set retries=0
 :wait
@@ -741,10 +749,10 @@ curl -s http://localhost:4000/health >nul 2>&1
 if errorlevel 1 goto wait
 
 echo [3/3] Starting Codex...
-codex -C D:\
+codex -C D:\\
 
 echo Cleaning up proxy...
-powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | ForEach-Object {{ Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }}"
 '''
             tmp = os.path.join(os.environ['TEMP'], 'codex-launcher.bat')
             with open(tmp, 'w', encoding='utf-8') as f:
